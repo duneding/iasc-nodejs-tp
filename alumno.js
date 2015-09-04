@@ -1,13 +1,13 @@
 var express = require('express');
 var app = express();
-var _puerto = '3001';
+var _puerto = '3001'; //Default
 var tipo_entidad = '1';
 var puerto_grupo = '3000';
 var querystring = require('querystring');
 var bodyParser = require('body-parser');
-var querystring = require('querystring');
 var http = require('http');
 var fs = require('fs');
+var url = require('url') ;
 
 //App use
 app.use(bodyParser.urlencoded({
@@ -19,35 +19,25 @@ app.use(bodyParser.json());
 var nombre_test = 'juan';
 var legajo_test = '11111';
 
+
+//Argumentos process.argv
+process.argv.forEach(function (val, index, array) {
+  if (index===2)
+    _puerto = val;
+
+  if (index===3)
+    nombre_test = val;
+
+  if (index===4)
+    legajo_test = val;
+
+});
+
 var server = app.listen(_puerto, function(){
 	var host = server.address().address;
 	var port = server.address().port;
   console.log('Example app listening at http://%s:%s', host, port);
 });
-
-/*var io = require('socket.io').listen(server);
-io.sockets.on('connection', function (socket) {
-socket.on('set nickname' , function (nickname) {
-socket.nickname = nickname;
-console.log(nickname + ' just connected!');
-
-});
-
-socket.on('msg' , function (msg) {
-socket.msg = msg;
-io.sockets.emit('response', msg);
-});
-});*/
-
-//----------------------------------------------
-//----------------------------------------------
-
-//----------------------------------------------
-//----------------------------------------------
-
-function setPuerto(puerto){
-	_puerto = puerto;
-}
 
 function suscribir(){
   var data = {
@@ -67,7 +57,9 @@ app.post('/suscribir', function(req, res) {
 });
 
 app.post('/notificar', function(req, res){
-	console.log('Notificacion del grupo: ' + req.query.texto);
+  var pregunta = req.param('pregunta');
+  var alumno = req.param('alumno');
+	console.log('Pregunta al grupo alumno ' + alumno + ' : ' + pregunta);
 })
 
 app.post('/consultar', function(req, res) {  
@@ -108,7 +100,6 @@ function PostCode(post_data_, path) {
   // Build the post string from an object
   var post_data = post_data_;
 
-console.log('POST DATA: ' + post_data);
   // An object of options to indicate where to post to
   var post_options = {
       host: 'localhost',

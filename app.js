@@ -36,12 +36,6 @@ var server = app.listen(3000, function () {
   console.log('Example app listening at http://%s:%s', host, port);
 });
 
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-
-//---------------------------------------------------------------
-//---------------------------------------------------------------
-
 //Home
 app.get('/', function (req, res) {
   res.send('Hello World!');
@@ -69,7 +63,7 @@ app.post('/consultar', function (req, res) {
   for (var i = alumnos.length - 1; i >= 0; i--) {
 	   var alumno = alumnos[i];
 	   console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']');
-	   Notificar(consulta.pregunta, alumno.puerto);
+	   Notificar(consulta.pregunta, alumno.puerto, alumno.nombre);
   };
   res.send('pregunta enviada: ' + JSON.stringify(req.body));
 });
@@ -77,7 +71,7 @@ app.post('/consultar', function (req, res) {
 //Suscripciones de clientes (alumnos, docentes)
 app.post('/suscribir', function(req, res){
 	var tipo = req.body.tipo;
-	console.log('tipo ' + tipo);
+
 	var suscripto = {nombre: req.body.nombre, legajo: req.body.legajo, puerto: req.body.puerto };
 	var tipoString;
 
@@ -90,7 +84,9 @@ app.post('/suscribir', function(req, res){
 		tipoString = 'docente';
 		docentes.push(suscripto);
 	}
-	res.send('suscripto: ' + tipoString + ' ' + suscripto.nombre + ' ' + suscripto.puerto + ' ' + suscripto.legajo);
+
+  var response = 'Suscripto: ' + suscripto.nombre + '::' + suscripto.puerto + '::' + suscripto.legajo;
+	res.send(response);
 });
 
 //Ver suscriptores
@@ -116,16 +112,17 @@ app.post('/escribir', function(req,res) {
 });
 
 
-function Notificar(pregunta, puerto) {
+function Notificar(pregunta, puerto, nombre) {
   // Build the post string from an object
-  var post_data = '?pregunta='+pregunta;
+  var post_data = querystring.stringify({pregunta: pregunta, alumno: nombre});
 
   // An object of options to indicate where to post to
   var post_options = {
       host: 'localhost',
       port: puerto,
       path: '/notificar',
-      method: 'POST',            
+      method: 'POST',
+      query: post_data,            
       headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Content-Length': post_data.length
@@ -141,7 +138,7 @@ function Notificar(pregunta, puerto) {
   });
 
   // post the data
-  post_req.write('sassajsnajncjdknfjkdsnfjnds');
+  post_req.write(post_data);
   post_req.end();
 
 }

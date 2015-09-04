@@ -42,14 +42,15 @@ app.get('/', function (req, res) {
 });
 
 //Listar preguntas
-app.get('/preguntas', function (req, res) {
-  res.send('muestro las preguntas');
+app.get('/consultas', function (req, res) {
   var aux ='';
+  console.log('cant preguntas: ' + consultas.length);
   for (var i = consultas.length - 1; i >= 0; i--) {
   	var pregunta = consultas[i];
-  	aux+= pregunta.pregunta + ' ' + pregunta.respuesta + '\n';
+  	aux+= pregunta.id + ' ' + pregunta.pregunta + ' ' + pregunta.respuesta + '\n';
   }
   res.send('consultas:\n' + aux);
+  
 });
 
 //Recibe preguntas de alumnos
@@ -57,8 +58,9 @@ app.post('/consultar', function (req, res) {
   var pregunta = req.body.pregunta;
   var legajo = req.body.legajo;
   var pregunton = req.body.alumno;
-
-  var consulta = {pregunta: pregunta, legajo: legajo, respuesta: ''};
+  
+  var id = consultas.length;
+  var consulta = {id: id, pregunta: pregunta, legajo: legajo, respuesta: ''};
   consultas.push(consulta);
   console.log('ahora notificar...');
   for (var i = alumnos.length - 1; i >= 0; i--) {
@@ -66,7 +68,7 @@ app.post('/consultar', function (req, res) {
 	   console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']');
 	   Notificar(consulta.pregunta, alumno.puerto, pregunton);
   };
-  res.send('pregunta enviada: ' + JSON.stringify(req.body));
+  res.send('pregunta enviada OK');// + JSON.stringify(req.body));
 });
 
 //Suscripciones de clientes (alumnos, docentes)
@@ -78,15 +80,13 @@ app.post('/suscribir', function(req, res){
 
   if(tipo === TIPO_ALUMNO) {
 		console.log('alumno suscripto: ' + req.body.nombre + ' - ' + req.body.legajo);
-		tipoString = 'alumno';
 		alumnos.push(suscripto);
 	} else {
-		console.log('docente suscripto');
-		tipoString = 'docente';
+		console.log('docente suscripto: ' + req.body.nombre);
 		docentes.push(suscripto);
 	}
 
-  var response = 'Suscripto: ' + suscripto.nombre + '::' + suscripto.puerto + '::' + suscripto.legajo;
+  var response = req.body.nombre + ' se encuentra Suscripto OK!!!';
 	res.send(response);
 });
 
@@ -111,7 +111,6 @@ app.get('/suscriptores', function (req, res) {
 app.post('/escribir', function(req,res) {
 
 });
-
 
 function Notificar(pregunta, puerto, nombre) {
   // Build the post string from an object

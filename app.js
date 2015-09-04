@@ -56,6 +56,7 @@ app.get('/preguntas', function (req, res) {
 app.post('/consultar', function (req, res) {
   var pregunta = req.body.pregunta;
   var legajo = req.body.legajo;
+  var pregunton = req.body.alumno;
 
   var consulta = {pregunta: pregunta, legajo: legajo, respuesta: ''};
   consultas.push(consulta);
@@ -63,7 +64,7 @@ app.post('/consultar', function (req, res) {
   for (var i = alumnos.length - 1; i >= 0; i--) {
 	   var alumno = alumnos[i];
 	   console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']');
-	   Notificar(consulta.pregunta, alumno.puerto, alumno.nombre);
+	   Notificar(consulta.pregunta, alumno.puerto, pregunton);
   };
   res.send('pregunta enviada: ' + JSON.stringify(req.body));
 });

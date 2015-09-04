@@ -57,13 +57,15 @@ app.post('/suscribir', function(req, res) {
 });
 
 app.post('/notificar', function(req, res){
-  var pregunta = req.param('pregunta');
-  var alumno = req.param('alumno');
+  
+  var pregunta = req.body.pregunta;
+  var alumno = req.body.alumno;
 	console.log('Pregunta al grupo alumno ' + alumno + ' : ' + pregunta);
 })
 
 app.post('/consultar', function(req, res) {  
   req.body.legajo = legajo_test;
+  req.body.alumno = nombre_test;
   consultar(req.body);
   res.send('Enviado!!!');
 });

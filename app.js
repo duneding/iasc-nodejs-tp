@@ -61,13 +61,7 @@ app.post('/consultar', function (req, res) {
   
   var id = consultas.length;
   var consulta = {id: id, pregunta: pregunta, legajo: legajo, respuesta: ''};
-  consultas.push(consulta);
-  console.log('ahora notificar...');
-  for (var i = alumnos.length - 1; i >= 0; i--) {
-	   var alumno = alumnos[i];
-	   console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']');
-	   Notificar(consulta.pregunta, alumno.puerto, pregunton);
-  };
+  addConsulta(consulta, notificar);
   res.send('pregunta enviada OK');// + JSON.stringify(req.body));
 });
 
@@ -112,14 +106,27 @@ app.post('/escribir', function(req,res) {
 
 });
 
-function Notificar(pregunta, puerto, nombre) {
-  // Build the post string from an object
-  var post_data = querystring.stringify({pregunta: pregunta, alumno: nombre});
+//FUNCIONES
+function addConsulta(consulta, post_action){
 
+  consultas.push(consulta);  
+  for (var i = alumnos.length - 1; i >= 0; i--) {
+     var alumno = alumnos[i];
+     console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']');
+     post_action(consulta, alumno);
+  };
+
+}
+
+function notificar(consulta, alumno) {
+
+  // Build the post string from an object
+  var post_data = querystring.stringify({pregunta: consulta.pregunta, alumno: alumno.nombre});
+  
   // An object of options to indicate where to post to
   var post_options = {
       host: 'localhost',
-      port: puerto,
+      port: alumno.puerto,
       path: '/notificar',
       method: 'POST',
       query: post_data,            

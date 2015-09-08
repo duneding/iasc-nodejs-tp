@@ -3,11 +3,13 @@ var querystring = require('querystring');
 var bodyParser = require('body-parser');
 var http = require('http');
 var fs = require('fs');
+var TIPO_QUERY = 'application/x-www-form-urlencoded';
+var TIPO_JSON = 'application/json';
 
 //Variables Default
 var _puerto = '3001';
 var tipo_entidad = '1';//1:alumno 2:docente
-var puerto_grupo = '3000';
+var PUERTO_GRUPO = '3000';
 
 //Variables para test
 var nombre_test = 'juan';
@@ -45,6 +47,33 @@ var server = app.listen(_puerto, function(){
   console.log('Example app listening at http://%s:%s', host, port);
 });
 
+app.post('/suscribir', function(req, res) {
+  post(JSON.stringify(Entidad()), 'suscribir', TIPO_JSON);
+  res.send('Suscripto!!!');
+});
+
+app.post('/consultar', function(req, res) {  
+  req.body.legajo = legajo_test;
+  req.body.alumno = nombre_test;  
+  post(JSON.stringify(req.body), 'consultar', TIPO_JSON);
+  res.send('Enviado!!!');
+});
+
+app.post('/responder', function(req, res) {  
+  post(JSON.stringify(req.body), 'responder', TIPO_JSON);
+  res.send('Respondido!!!');
+});
+
+app.post('/notificar', function(req, res){
+  
+  var pregunta = req.body.pregunta;
+  var alumno = req.body.alumno;
+  console.log('Pregunta al grupo alumno ' + alumno + ' : ' + pregunta);
+})
+
+//------------------------------------------------------------------
+//FUNCIONES---------------------------------------------------------
+//------------------------------------------------------------------
 function Entidad(){
   if (tipo_entidad==1) 
     return Alumno();
@@ -67,49 +96,15 @@ function Docente(){
           };
 }
 
-function suscribir(entidad){  
-  /*if (tipo_entidad==1)
-      var data = {
-                nombre: nombre_test,
-                legajo: legajo_test,
-                puerto: _puerto,
-                tipo:tipo_entidad
-              };
-  else
-      var data = {
-                nombre: nombre_test,
-                puerto: _puerto,
-                tipo:tipo_entidad
-              };*/
+/*function suscribir(entidad){  
+  PostCode(JSON.stringify(entidad), 'suscribir');
+  //setTimeout(function(){ consultar(makeid()) }, puerto_grupo);
+}*/
 
-//console.log(data);
-	PostCode(JSON.stringify(entidad), 'suscribir');
-	//setTimeout(function(){ consultar(makeid()) }, puerto_grupo);
-}
-
-app.post('/suscribir', function(req, res) {
-  suscribir(Entidad());
-  res.send('Suscripto!!!');
-});
-
-app.post('/notificar', function(req, res){
-  
-  var pregunta = req.body.pregunta;
-  var alumno = req.body.alumno;
-	console.log('Pregunta al grupo alumno ' + alumno + ' : ' + pregunta);
-})
-
-app.post('/consultar', function(req, res) {  
-  req.body.legajo = legajo_test;
-  req.body.alumno = nombre_test;
-  consultar(req.body);
-  res.send('Enviado!!!');
-});
-
-function consultar(pregunta){
+/*function consultar(pregunta){
 
     PostCode(JSON.stringify(pregunta), 'consultar');
-	/*setInterval(function(){ 
+	setInterval(function(){ 
 			//var query = '?pregunta=preguntar';
       
       var data = querystring.stringify({
@@ -120,10 +115,10 @@ function consultar(pregunta){
       });
 
 			PostCode(data, 'preguntar')
-		}, puerto_grupo);*/
-	}
+		}, puerto_grupo);
+}*/
 
-function makeid()
+/*function makeid()
 {
     var text = "";
     var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -132,21 +127,21 @@ function makeid()
         text += possible.charAt(Math.floor(Math.random() * possible.length));
 
     return text;
-}
+}*/
 
-function PostCode(post_data_, path) {
+function post(data, path, tipo) {
   // Build the post string from an object
-  var post_data = post_data_;
+  //var post_data = JSON.stringify(post_data_);
 
   // An object of options to indicate where to post to
   var post_options = {
       host: 'localhost',
-      port: puerto_grupo,
+      port: PUERTO_GRUPO,
       path: '/' + path,
       method: 'POST',     
       headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': post_data.length
+          'Content-Type': tipo,
+          'Content-Length': data.length
       }
   };
 
@@ -159,7 +154,7 @@ function PostCode(post_data_, path) {
   });
 
   // post the data
-  post_req.write(post_data);
+  post_req.write(data);
   post_req.end();
 
 }

@@ -11,8 +11,9 @@ var bodyParser = require('body-parser');
 var querystring = require('querystring');
 var http = require('http');
 var fs = require('fs');
-//var attrConsulta = ['id', 'pregunta', 'legajo', 'respuestas'];
 var _ = require('underscore')
+var TIPO_QUERY = 'application/x-www-form-urlencoded';
+var TIPO_JSON = 'application/json';
 
 //App use
 app.use(bodyParser.urlencoded({
@@ -58,7 +59,15 @@ app.get('/consultas', function (req, res) {
 app.post('/consultar', function (req, res) {
   
   var consulta = pipeline(['id', 'pregunta', 'legajo', 'respuestas'], req);
-  procesarConsulta(consulta, agregar, notificar);
+  procesarAccion(consulta, agregar, notificar);
+  res.send('pregunta enviada OK');
+});
+
+//Recibe respuesta de docentes
+app.post('/responder', function (req, res) {
+  
+  var respuesta = pipeline(['id', 'respuesta'], req);
+  procesarAccion(respuesta, agregar, notificar);
   res.send('pregunta enviada OK');
 });
 
@@ -104,7 +113,7 @@ app.post('/escribir', function(req,res) {
 });
 
 //------------------------------------------------------------------
-//FUNCIONES-------------------------------------------------------
+//FUNCIONES---------------------------------------------------------
 //------------------------------------------------------------------
 function pipeline(names, value){
   var result = {};
@@ -134,35 +143,45 @@ function agregar(consulta){
   consultas.push(consulta);
 }
 
+function responder(respuesta){
+  //consultas.push(consulta);
+  var result = consultas.filter(function (chain) {
+      return chain.id === respuesta.id;
+    })[0];
+
+  console.log(result);
+}
+
 function notificar(consulta){
 
   for (var i = alumnos.length - 1; i >= 0; i--) {
      var alumno = alumnos[i];
      console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']');
-     post(consulta, alumno);
+     var data = querystring.stringify({pregunta: consulta.pregunta, alumno: alumno.nombre});
+     post(data, alumno.puerto, 'notificar', TIPO_QUERY);
   };
 }
 
-function procesarConsulta(consulta, cont1, cont2){
-  cont1(consulta);
-  cont2(consulta);  
+function procesarAccion(objeto, cont1, cont2){
+  cont1(objeto);
+  cont2(objeto);  
 }
 
-function post(consulta, alumno) {
+function post(data, puerto, path, tipo) {
 
   // Build the post string from an object
-  var post_data = querystring.stringify({pregunta: consulta.pregunta, alumno: alumno.nombre});
+  //var post_data = querystring.stringify({pregunta: consulta.pregunta, alumno: alumno.nombre});
   
   // An object of options to indicate where to post to
   var post_options = {
       host: 'localhost',
-      port: alumno.puerto,
-      path: '/notificar',
+      port: puerto,
+      path: '/' + path,
       method: 'POST',
-      query: post_data,            
+      query: data,            
       headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Content-Length': post_data.length
+          'Content-Type': tipo,
+          'Content-Length': data.length
       }
   };
 
@@ -175,7 +194,7 @@ function post(consulta, alumno) {
   });
 
   // post the data
-  post_req.write(post_data);
+  post_req.write(data);
   post_req.end();
 
 }

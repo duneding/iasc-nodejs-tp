@@ -11,7 +11,8 @@ var bodyParser = require('body-parser');
 var querystring = require('querystring');
 var http = require('http');
 var fs = require('fs');
-
+//var attrConsulta = ['id', 'pregunta', 'legajo', 'respuestas'];
+var _ = require('underscore')
 
 //App use
 app.use(bodyParser.urlencoded({
@@ -55,14 +56,10 @@ app.get('/consultas', function (req, res) {
 
 //Recibe preguntas de alumnos
 app.post('/consultar', function (req, res) {
-  var pregunta = req.body.pregunta;
-  var legajo = req.body.legajo;
-  var pregunton = req.body.alumno;
   
-  var id = consultas.length;
-  var consulta = {id: id, pregunta: pregunta, legajo: legajo, respuesta: ''};
-  addConsulta(consulta, notificar);
-  res.send('pregunta enviada OK');// + JSON.stringify(req.body));
+  var consulta = pipeline(['id', 'pregunta', 'legajo', 'respuestas'], req);
+  procesarConsulta(consulta, agregar, notificar);
+  res.send('pregunta enviada OK');
 });
 
 //Suscripciones de clientes (alumnos, docentes)
@@ -106,19 +103,52 @@ app.post('/escribir', function(req,res) {
 
 });
 
-//FUNCIONES
-function addConsulta(consulta, post_action){
+//------------------------------------------------------------------
+//FUNCIONES-------------------------------------------------------
+//------------------------------------------------------------------
+function pipeline(names, value){
+  var result = {};
 
-  consultas.push(consulta);  
+  names.forEach(function(name){
+    result = _.extend(result, newJson(name, value));
+  });
+
+  return result;
+}
+
+function newJson(name, value){
+  if (name=='id')
+    return {id:consultas.length};
+
+  if (name=='pregunta')
+    return {pregunta:value.body.pregunta};
+
+  if (name=='legajo')
+    return {legajo:value.body.legajo};
+
+    if (name=='repuestas')
+    return {respuestas:''};
+}
+
+function agregar(consulta){
+  consultas.push(consulta);
+}
+
+function notificar(consulta){
+
   for (var i = alumnos.length - 1; i >= 0; i--) {
      var alumno = alumnos[i];
      console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']');
-     post_action(consulta, alumno);
+     post(consulta, alumno);
   };
-
 }
 
-function notificar(consulta, alumno) {
+function procesarConsulta(consulta, cont1, cont2){
+  cont1(consulta);
+  cont2(consulta);  
+}
+
+function post(consulta, alumno) {
 
   // Build the post string from an object
   var post_data = querystring.stringify({pregunta: consulta.pregunta, alumno: alumno.nombre});

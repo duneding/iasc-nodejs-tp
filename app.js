@@ -55,6 +55,10 @@ app.get('/consultas', function (req, res) {
   
 });
 
+app.get('/preguntas', function(req, res){
+  res.send(JSON.stringify(consultas));
+})
+
 //Recibe preguntas de alumnos
 app.post('/consultar', function (req, res) {
   
@@ -65,9 +69,10 @@ app.post('/consultar', function (req, res) {
 
 //Recibe respuesta de docentes
 app.post('/responder', function (req, res) {
-  
+
   var respuesta = pipeline(['id', 'respuesta'], req);
-  procesarAccion(respuesta, agregar, notificar);
+  console.log('martin   ' + req.respuesta);
+  procesarAccion(respuesta, marcar, notificar);
   res.send('pregunta enviada OK');
 });
 
@@ -121,7 +126,7 @@ function pipeline(names, value){
   names.forEach(function(name){
     result = _.extend(result, newJson(name, value));
   });
-
+console.log('dsdjnsjfdsnf bsdnbfjksd  ' + JSON.stringify(result));
   return result;
 }
 
@@ -143,11 +148,17 @@ function agregar(consulta){
   consultas.push(consulta);
 }
 
+function marcar(respuesta){
+console.log('ssssssssssssssssssss    ' + JSON.stringify(respuesta));
+  var a = _.find(consultas,function(rw){ return rw.id === respuesta.id });
+
+  console.log('holaaaa  ' + JSON.stringify(a));
+
+}
+
 function responder(respuesta){
   //consultas.push(consulta);
-  var result = consultas.filter(function (chain) {
-      return chain.id === respuesta.id;
-    })[0];
+var result = _.filter(consultas, {id: 0})[0]
 
   console.log(result);
 }

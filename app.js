@@ -64,10 +64,18 @@ app.post('/consultar', function (req, res) {
   
   req.body.id = consultas.length;
   var consulta = pipeline(['id', 'pregunta', 'alumno', 'legajo', 'respuestas'], req);
-  procesarAccion(consulta, agregar, notificar, all);
-  res.send('pregunta enviada OK');
+  
+  if (yaRespondida(consulta.id)){
+    res.send('pregunta ya respondida por otro loco');  
+  }else{
+    procesarAccion(consulta, agregar, notificar, all);
+    res.send('pregunta enviada OK');
+  }
 });
 
+function yaRespondida(id){
+
+}
 //Recibe respuesta de docentes
 app.post('/responder', function (req, res) {
 
@@ -159,14 +167,9 @@ function agregar(consulta){
 
 function marcar(consulta){  
   var res = {};
-  for (var i = 0; i < consultas.length ; i++) {
-    if (consultas[i].id == consulta.id){
-      res.docente = consulta.docente;
-      res.respuesta = consulta.respuesta;
-      consultas[consulta.id].respuestas = res;      
-      break;
-    }             
-  }
+  res.docente = consulta.docente;
+  res.respuesta = consulta.respuesta;
+  consultas[consulta.id].respuestas = res;      
 }
 
 function all(entidades, mensaje, target){

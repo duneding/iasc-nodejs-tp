@@ -82,14 +82,6 @@ app.post('/responder', function (req, res) {
 
 });
 
-function yaRespondida(id){
-
-  if (consultas[id].respuestas.respuesta!="")
-    return true;
-  else
-    return false;
-}
-
 //Suscripciones de clientes (alumnos, docentes)
 app.post('/suscribir', function(req, res){
 	var tipo = req.body.tipo;
@@ -141,6 +133,14 @@ function pipeline(names, value){
     result = _.extend(result, newJson(name, value));
   });
   return result;
+}
+
+function yaRespondida(id){
+
+  if (consultas[id].respuestas.respuesta!="")
+    return true;
+  else
+    return false;
 }
 
 function newJson(name, value){

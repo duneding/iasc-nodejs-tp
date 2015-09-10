@@ -71,7 +71,7 @@ app.post('/consultar', function (req, res) {
 //Recibe respuesta de docentes
 app.post('/responder', function (req, res) {
 
-  var respuesta = pipeline(['id', 'respuesta'], req);
+  var respuesta = pipeline(['id', 'docente', 'respuesta'], req);
   procesarAccion(respuesta, marcar, notificar);
   res.send('pregunta enviada OK');
 });
@@ -97,7 +97,7 @@ app.post('/suscribir', function(req, res){
 
 //Ver suscriptores
 app.get('/suscriptores', function (req, res) {
-  	var aux = 'alumnos:\n';
+  	var aux = 'alumnos:\nombre';
     console.log('cantidad alumnos: ' + alumnos.length);
     console.log('cantidad docentes: ' + docentes.length);
 	
@@ -130,6 +130,7 @@ function pipeline(names, value){
 }
 
 function newJson(name, value){
+  
   if (name=='id')
     return {id:value.body.id};
 
@@ -140,35 +141,48 @@ function newJson(name, value){
     return {legajo:value.body.legajo};
 
   if (name=='respuestas')
-    return {respuestas:''};
+    return {respuestas:{'docente':'', respuesta:''}};
 
   if (name=='respuesta')
     return {respuesta:value.body.respuesta};
 
   if (name=='alumno')
     return {alumno:value.body.alumno};  
+
+  if (name=='docente')
+    return {docente:value.body.docente}; 
 }
 
 function agregar(consulta){
   consultas.push(consulta);
 }
 
-function marcar(respuesta){  
+function marcar(consulta){  
+  var res = {};
   for (var i = 0; i < consultas.length ; i++) {
-    if (consultas[i].id == respuesta.id){
-          consultas[i].respuestas = respuesta.respuesta;
-          break;
-    }
+    if (consultas[i].id == consulta.id){
+      res.docente = consulta.docente;
+      res.respuesta = consulta.respuesta;
+      consultas[consulta.id].respuestas = res;      
+      break;
+    }             
   }
 }
 
 function notificar(objeto){
 
+  var mensaje = JSON.stringify(consultas[objeto.id]);
+  console.log('ḾESAJE  ' + mensaje);
   for (var i = alumnos.length - 1; i >= 0; i--) {
      var alumno = alumnos[i];
-     console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']...');  
-     var mensaje = querystring.stringify(objeto);
-     post(mensaje, alumno.puerto, 'notificar', TIPO_QUERY);
+     console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']...');    
+     post(mensaje, alumno.puerto, 'notificar', TIPO_JSON);
+  };
+
+  for (var i = docentes.length - 1; i >= 0; i--) {
+     var docente = docentes[i];
+     console.log('Enviando notificacion a docente ['+docente.nombre+'] en puerto ['+docente.puerto+']...');    
+     post(mensaje, docente.puerto, 'notificar', TIPO_JSON);
   };
 }
 

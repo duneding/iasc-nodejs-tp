@@ -12,8 +12,8 @@ var tipo_entidad = '1';//1:alumno 2:docente
 var PUERTO_GRUPO = '3000';
 
 //Variables para test
-var nombre_test = 'juan';
-var legajo_test = '11111';
+var nombre = 'juan';
+var legajo = '11111';
 
 //App use
 var app = express();
@@ -34,10 +34,10 @@ process.argv.forEach(function (val, index, array) {
     tipo_entidad = val;
 
   if (index===4)
-    nombre_test = val;
+    nombre = val;
 
   if (index===5)
-    legajo_test = val;  
+    legajo = val;  
 
 });
 
@@ -53,24 +53,26 @@ app.post('/suscribir', function(req, res) {
 });
 
 app.post('/consultar', function(req, res) {  
-  req.body.legajo = legajo_test;
-  req.body.alumno = nombre_test;  
+  req.body.legajo = legajo;
+  req.body.alumno = nombre;  
   post(JSON.stringify(req.body), 'consultar', TIPO_JSON);
   res.send('Enviado!!!');
 });
 
 app.post('/responder', function(req, res) {  
+  req.body.docente = nombre;
   post(JSON.stringify(req.body), 'responder', TIPO_JSON);
   res.send('Respondido!!!');
 });
 
 app.post('/notificar', function(req, res){
   
-  var mensaje = '';
-  if(req.body.hasOwnProperty('pregunta'))
+  var mensaje = '';  
+  if(req.body.respuestas.respuesta=="")
     mensaje = 'Pregunta al grupo alumno ' + req.body.alumno + ' : ' + req.body.pregunta;
   else
-    mensaje = 'Respuesta a pregunta ' + req.body.id + ' : ' + req.body.respuesta;
+    mensaje = 'Consulta resuelta!!!\nPregunta: ' + req.body.pregunta + ' (de ' + req.body.alumno + ')\n   |--->Respuesta: '
+              + req.body.respuestas.respuesta + ' (de ' + req.body.respuestas.docente + ')';
   
   console.log(mensaje);
   res.send(mensaje);
@@ -87,52 +89,19 @@ function Entidad(){
 }
 
 function Alumno(){
-  return { nombre: nombre_test,
-           legajo: legajo_test,
+  return { nombre: nombre,
+           legajo: legajo,
            puerto: _puerto,
            tipo:tipo_entidad
           };
 }
 
 function Docente(){
-  return { nombre: nombre_test,
+  return { nombre: nombre,
            puerto: _puerto,
            tipo:tipo_entidad
           };
 }
-
-/*function suscribir(entidad){  
-  PostCode(JSON.stringify(entidad), 'suscribir');
-  //setTimeout(function(){ consultar(makeid()) }, puerto_grupo);
-}*/
-
-/*function consultar(pregunta){
-
-    PostCode(JSON.stringify(pregunta), 'consultar');
-	setInterval(function(){ 
-			//var query = '?pregunta=preguntar';
-      
-      var data = querystring.stringify({
-        nombre: nombre_test,
-        leagjo: legajo_test,
-        puerto: _puerto,
-        tipo:1
-      });
-
-			PostCode(data, 'preguntar')
-		}, puerto_grupo);
-}*/
-
-/*function makeid()
-{
-    var text = "";
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    for( var i=0; i < 50; i++ )
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-    return text;
-}*/
 
 function post(data, path, tipo) {
   // Build the post string from an object

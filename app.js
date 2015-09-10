@@ -63,7 +63,7 @@ app.get('/preguntas', function(req, res){
 app.post('/consultar', function (req, res) {
   
   req.body.id = consultas.length;
-  var consulta = pipeline(['id', 'pregunta', 'legajo', 'respuestas'], req);
+  var consulta = pipeline(['id', 'pregunta', 'alumno', 'legajo', 'respuestas'], req);
   procesarAccion(consulta, agregar, notificar);
   res.send('pregunta enviada OK');
 });
@@ -144,6 +144,9 @@ function newJson(name, value){
 
   if (name=='respuesta')
     return {respuesta:value.body.respuesta};
+
+  if (name=='alumno')
+    return {alumno:value.body.alumno};  
 }
 
 function agregar(consulta){
@@ -165,7 +168,6 @@ function notificar(objeto){
      var alumno = alumnos[i];
      console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']...');  
      var mensaje = querystring.stringify(objeto);
-     console.log('un mensaje  ' + mensaje);
      post(mensaje, alumno.puerto, 'notificar', TIPO_QUERY);
   };
 }

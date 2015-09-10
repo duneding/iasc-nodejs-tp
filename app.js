@@ -62,6 +62,7 @@ app.get('/preguntas', function(req, res){
 //Recibe preguntas de alumnos
 app.post('/consultar', function (req, res) {
   
+  req.body.id = consultas.length;
   var consulta = pipeline(['id', 'pregunta', 'legajo', 'respuestas'], req);
   procesarAccion(consulta, agregar, notificar);
   res.send('pregunta enviada OK');
@@ -71,7 +72,6 @@ app.post('/consultar', function (req, res) {
 app.post('/responder', function (req, res) {
 
   var respuesta = pipeline(['id', 'respuesta'], req);
-  console.log('martin   ' + req.respuesta);
   procesarAccion(respuesta, marcar, notificar);
   res.send('pregunta enviada OK');
 });
@@ -126,13 +126,12 @@ function pipeline(names, value){
   names.forEach(function(name){
     result = _.extend(result, newJson(name, value));
   });
-console.log('dsdjnsjfdsnf bsdnbfjksd  ' + JSON.stringify(result));
   return result;
 }
 
 function newJson(name, value){
   if (name=='id')
-    return {id:consultas.length};
+    return {id:value.body.id};
 
   if (name=='pregunta')
     return {pregunta:value.body.pregunta};
@@ -140,27 +139,24 @@ function newJson(name, value){
   if (name=='legajo')
     return {legajo:value.body.legajo};
 
-    if (name=='repuestas')
+  if (name=='respuestas')
     return {respuestas:''};
+
+  if (name=='respuesta')
+    return {respuesta:value.body.respuesta};
 }
 
 function agregar(consulta){
   consultas.push(consulta);
 }
 
-function marcar(respuesta){
-console.log('ssssssssssssssssssss    ' + JSON.stringify(respuesta));
-  var a = _.find(consultas,function(rw){ return rw.id === respuesta.id });
-
-  console.log('holaaaa  ' + JSON.stringify(a));
-
-}
-
-function responder(respuesta){
-  //consultas.push(consulta);
-var result = _.filter(consultas, {id: 0})[0]
-
-  console.log(result);
+function marcar(respuesta){  
+  for (var i = 0; i < consultas.length ; i++) {
+    if (consultas[i].id == respuesta.id){
+          consultas[i].respuestas = respuesta.respuesta;
+          break;
+    }
+  }
 }
 
 function notificar(consulta){

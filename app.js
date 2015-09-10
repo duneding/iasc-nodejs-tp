@@ -64,7 +64,7 @@ app.post('/consultar', function (req, res) {
   
   req.body.id = consultas.length;
   var consulta = pipeline(['id', 'pregunta', 'alumno', 'legajo', 'respuestas'], req);
-  procesarAccion(consulta, agregar, notificar);
+  procesarAccion(consulta, agregar, notificar, all);
   res.send('pregunta enviada OK');
 });
 
@@ -72,7 +72,7 @@ app.post('/consultar', function (req, res) {
 app.post('/responder', function (req, res) {
 
   var respuesta = pipeline(['id', 'docente', 'respuesta'], req);
-  procesarAccion(respuesta, marcar, notificar);
+  procesarAccion(respuesta, marcar, notificar, all);
   res.send('pregunta enviada OK');
 });
 
@@ -169,26 +169,26 @@ function marcar(consulta){
   }
 }
 
-function notificar(objeto){
-
-  var mensaje = JSON.stringify(consultas[objeto.id]);
-  console.log('ḾESAJE  ' + mensaje);
-  for (var i = alumnos.length - 1; i >= 0; i--) {
-     var alumno = alumnos[i];
-     console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']...');    
-     post(mensaje, alumno.puerto, 'notificar', TIPO_JSON);
-  };
-
-  for (var i = docentes.length - 1; i >= 0; i--) {
-     var docente = docentes[i];
-     console.log('Enviando notificacion a docente ['+docente.nombre+'] en puerto ['+docente.puerto+']...');    
-     post(mensaje, docente.puerto, 'notificar', TIPO_JSON);
+function all(entidades, mensaje, target){
+    
+  for (var i = entidades.length - 1; i >= 0; i--) {
+     var entidad = entidades[i];
+     console.log('Enviando notificacion a ' + target + ' ['+entidad.nombre+'] en puerto ['+entidad.puerto+']...');    
+     post(mensaje, entidad.puerto, 'notificar', TIPO_JSON);
   };
 }
 
-function procesarAccion(objeto, cont1, cont2){
+function notificar(objeto, cont){
+
+  var mensaje = JSON.stringify(consultas[objeto.id]);
+  
+  cont(alumnos, mensaje, 'alumno');
+  cont(docentes, mensaje, 'docente');
+}
+
+function procesarAccion(objeto, cont1, cont2, cont3){
   cont1(objeto);
-  cont2(objeto);  
+  cont2(objeto, cont3);  
 }
 
 function post(data, puerto, path, tipo) {

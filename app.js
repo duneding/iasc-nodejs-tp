@@ -64,25 +64,31 @@ app.post('/consultar', function (req, res) {
   
   req.body.id = consultas.length;
   var consulta = pipeline(['id', 'pregunta', 'alumno', 'legajo', 'respuestas'], req);
-  
-  if (yaRespondida(consulta.id)){
-    res.send('pregunta ya respondida por otro loco');  
-  }else{
-    procesarAccion(consulta, agregar, notificar, all);
-    res.send('pregunta enviada OK');
-  }
+  procesarAccion(consulta, agregar, notificar, all);
+  res.send('pregunta enviada OK');
 });
 
-function yaRespondida(id){
-
-}
 //Recibe respuesta de docentes
 app.post('/responder', function (req, res) {
 
   var respuesta = pipeline(['id', 'docente', 'respuesta'], req);
-  procesarAccion(respuesta, marcar, notificar, all);
-  res.send('pregunta enviada OK');
+
+  if (yaRespondida(respuesta.id))
+    res.send('pregunta ya respondida por otro loco');  
+  else{
+    procesarAccion(respuesta, marcar, notificar, all);
+    res.send('respuesta enviada OK');
+  } 
+
 });
+
+function yaRespondida(id){
+
+  if (consultas[id].respuestas.respuesta!="")
+    return true;
+  else
+    return false;
+}
 
 //Suscripciones de clientes (alumnos, docentes)
 app.post('/suscribir', function(req, res){
@@ -165,7 +171,9 @@ function agregar(consulta){
   consultas.push(consulta);
 }
 
-function marcar(consulta){  
+function marcar(consulta){
+
+
   var res = {};
   res.docente = consulta.docente;
   res.respuesta = consulta.respuesta;

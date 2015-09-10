@@ -66,9 +66,14 @@ app.post('/responder', function(req, res) {
 
 app.post('/notificar', function(req, res){
   
-  var pregunta = req.body.pregunta;
-  var alumno = req.body.alumno;
-  console.log('Pregunta al grupo alumno ' + alumno + ' : ' + pregunta);
+  var mensaje = '';
+  if(req.body.hasOwnProperty('pregunta'))
+    mensaje = 'Pregunta al grupo alumno ' + req.body.alumno + ' : ' + req.body.pregunta;
+  else
+    mensaje = 'Respuesta a pregunta ' + req.body.id + ' : ' + req.body.respuesta;
+  
+  console.log(mensaje);
+  res.send(mensaje);
 })
 
 //------------------------------------------------------------------

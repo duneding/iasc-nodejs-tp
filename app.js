@@ -159,13 +159,14 @@ function marcar(respuesta){
   }
 }
 
-function notificar(consulta){
+function notificar(objeto){
 
   for (var i = alumnos.length - 1; i >= 0; i--) {
      var alumno = alumnos[i];
-     console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']');
-     var data = querystring.stringify({pregunta: consulta.pregunta, alumno: alumno.nombre});
-     post(data, alumno.puerto, 'notificar', TIPO_QUERY);
+     console.log('Enviando notificacion a alumno ['+alumno.nombre+'] en puerto ['+alumno.puerto+']...');  
+     var mensaje = querystring.stringify(objeto);
+     console.log('un mensaje  ' + mensaje);
+     post(mensaje, alumno.puerto, 'notificar', TIPO_QUERY);
   };
 }
 

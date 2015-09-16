@@ -1,3 +1,16 @@
+/*
+EL ALUMNO PERIODICAMENTE ENVIA UNA CONSULTA AL SERVIDOR.
+EL SERVIDOR RECIBE UNA CONSULTA, GENERA UN ID Y ENVIA LA CONSULTA A TODOS
+TODOS TIENEN UN LISTADO DE CONSULTAS PENDIENTES. EL ALUMNO NO SE SI HACE FALTA.
+EL DOCENTE PERIODICAMENTE ELIGE UNA CONSULTA AL AZAR Y LA EMPIEZA A RESPONDER
+CUANDO EMPIEZA A RESPONDER, EL SERVIDOR AVISA A TODOS QUE ESA PREGUNTA ESTA SIENDO RESPONDIDA. ES UN FLAG. AVISA EL ID DEL DOCENTE QUE ESTA RESPONDIENDO.
+SI EL DOCENTE RECIBE QUE EL MISMO ESTA RESPONDIENDO UNA CONSULTA, NO ASIGNA EL FLAG ESTANRESPONDIENDO EN TRUE.
+LUEGO DE UN TIEMPO ALEATORIO EL DOCENTE QUE ESTA ESCRIBIENDO POSTEA LA RESPUESTA. 
+CUANDO UNA PREGUNTA SE RESPONDE, SE NOTIFICA A TODOS QUE FUE RESPONDIDA Y SE ELIMINA DEL LISTADO DE CONSULTAS EN EL SERVIDOR Y DE DOCENTES.
+
+HAY QUE ARMAR UN EVENT LOOP QUE PERIODICAMENTE REALICE LAS ACCIONES MENCIONADAS.
+
+*/
 //==========
 //===EH LEE LA DOCUMENTACIÓN ACA=====
 //==http://expressjs.com/guide/routing.html===
@@ -14,7 +27,7 @@ var fs = require('fs');
 var _ = require('underscore')
 var TIPO_QUERY = 'application/x-www-form-urlencoded';
 var TIPO_JSON = 'application/json';
-
+var incremental = 0; 
 //App use
 app.use(bodyParser.urlencoded({
   extended: true
@@ -24,8 +37,7 @@ app.use(bodyParser.json());
 //Listas
 var alumnos = [];
 var docentes = [];
-var consultas = [];
-var respuestasPendientes = [];
+var consultas = {};
 
 //Flags de tipos
 var TIPO_ALUMNO='1';
@@ -44,6 +56,7 @@ app.get('/', function (req, res) {
 });
 
 //Listar preguntas
+/*
 app.get('/consultas', function (req, res) {
   var aux ='';
   console.log('cant preguntas: ' + consultas.length);
@@ -51,21 +64,33 @@ app.get('/consultas', function (req, res) {
   	var pregunta = consultas[i];
   	aux+= pregunta.id + ' ' + pregunta.pregunta + ' ' + pregunta.respuesta + '\n';
   }
-  res.send('consultas:\n' + aux);
-  
+  res.send('consultas:\n' + aux);  
 });
-
+*/
 app.get('/preguntas', function(req, res){
   res.send(JSON.stringify(consultas));
 })
 
 //Recibe preguntas de alumnos
 app.post('/consultar', function (req, res) {
-  
-  req.body.id = consultas.length;
+  req.body.id = nuevoId();
   var consulta = pipeline(['id', 'pregunta', 'alumno', 'legajo', 'respuestas'], req);
   procesarAccion(consulta, agregar, notificar, all);
   res.send('pregunta enviada OK');
+});
+
+
+//Recibe anuncio de que está escribiendo el docente
+
+app.post('/estoyRespondiendo', function(req,res){ //pregunto si estanrespondiendo esta en true. Si esta en false, aviso a todos el ID de quien esta respondiendo.
+  var respuesta = pipeline(['id', 'docente'], req);    
+
+  if (_estanRespondiendo(respuesta.id))
+    res.send('pregunta ya esta siendo respondida por otro loco');  
+  else{
+    procesarAccion(respuesta, marcarEstanRespondiendo, estanRespondiendo, all);
+    res.send('anuncio de respuesta ok');
+  } 
 });
 
 //Recibe respuesta de docentes
@@ -73,12 +98,12 @@ app.post('/responder', function (req, res) {
 
   var respuesta = pipeline(['id', 'docente', 'respuesta'], req);
 
-  if (yaRespondida(respuesta.id))
-    res.send('pregunta ya respondida por otro loco');  
-  else{
-    procesarAccion(respuesta, marcar, notificar, all);
-    res.send('respuesta enviada OK');
-  } 
+//  if (yaRespondida(respuesta.id))
+  //  res.send('pregunta ya respondida por otro loco');  
+  //else{
+  procesarAccion(respuesta, eliminar, notificar, all);
+  res.send('respuesta enviada OK');
+  //} 
 
 });
 
@@ -128,13 +153,19 @@ app.post('/escribir', function(req,res) {
 //------------------------------------------------------------------
 function pipeline(names, value){
   var result = {};
-
   names.forEach(function(name){
     result = _.extend(result, newJson(name, value));
   });
   return result;
 }
+function marcarEstanRespondiendo(consulta){
+  consultas[consulta.id].estanRespondiendo = true;
+  consultas[consulta.id].docente = consulta.docente;
+}
 
+function _estanRespondiendo(id){  
+  return consultas[id].estanRespondiendo;
+}
 function yaRespondida(id){
 
   if (consultas[id].respuestas.respuesta!="")
@@ -168,33 +199,38 @@ function newJson(name, value){
 }
 
 function agregar(consulta){
-  consultas.push(consulta);
+  consulta.estanRespondiendo = false;
+  consultas[consulta.id] = consulta;
+  //consultas.push(consulta);
 }
 
-function marcar(consulta){
-
-
-  var res = {};
-  res.docente = consulta.docente;
-  res.respuesta = consulta.respuesta;
-  consultas[consulta.id].respuestas = res;      
+function eliminar(consulta){
+  delete consultas[consulta.id];
 }
 
-function all(entidades, mensaje, target){
+function all(entidades, mensaje, target,metodo){
     
   for (var i = entidades.length - 1; i >= 0; i--) {
      var entidad = entidades[i];
      console.log('Enviando notificacion a ' + target + ' ['+entidad.nombre+'] en puerto ['+entidad.puerto+']...');    
-     post(mensaje, entidad.puerto, 'notificar', TIPO_JSON);
+     post(mensaje, entidad.puerto, metodo, TIPO_JSON);
   };
 }
 
-function notificar(objeto, cont){
+function nuevoId(){
+  return incremental++;
+}
 
+function estanRespondiendo(objeto, cont){
   var mensaje = JSON.stringify(consultas[objeto.id]);
-  
-  cont(alumnos, mensaje, 'alumno');
-  cont(docentes, mensaje, 'docente');
+  cont(alumnos, mensaje, 'alumno', 'estanRespondiendo');
+  cont(docentes, mensaje, 'docente','estanRespondiendo');
+}
+
+function notificar(objeto, cont){
+  var mensaje = JSON.stringify(consultas[objeto.id]);
+  cont(alumnos, mensaje, 'alumno', 'notificar');
+  cont(docentes, mensaje, 'docente','notificar');
 }
 
 function procesarAccion(objeto, cont1, cont2, cont3){
